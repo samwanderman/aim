@@ -8,6 +8,7 @@
 
 #include "Serial.h"
 
+#include <sys/select.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -66,6 +67,29 @@ int Serial::close() {
 }
 
 int Serial::read(uint8_t buffer[], uint32_t bufferSize) {
+	return read(buffer, bufferSize, -1);
+}
+
+int Serial::read(uint8_t buffer[], uint32_t bufferSize, int64_t timeout) {
+	if (timeout > 0) {
+		fd_set set;
+		struct timeval timeoutVal;
+
+		FD_ZERO(&set);
+		FD_SET(fd, &set);
+
+		uint64_t t			= timeout * 1000;
+		timeoutVal.tv_sec	= t / 1000000;
+		timeoutVal.tv_usec	= t % 1000000;
+
+		int rv = select(fd + 1, &set, nullptr, nullptr, &timeoutVal);
+		if (rv == -1) {
+			return -1;
+		} else if (rv == 0) {
+			return -1;
+		}
+	}
+
 	return ::read(fd, buffer, bufferSize);
 }
 

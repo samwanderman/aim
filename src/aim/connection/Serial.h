@@ -24,6 +24,8 @@ public:
 	struct Config {
 		const char*	name		= nullptr;
 		uint32_t	baudrate	= 0;
+		bool		nonBlock	= false;
+		int64_t		timeout		= -1;
 	};
 
 	/**
@@ -83,6 +85,9 @@ public:
 	/**
 	 * Read bufferSize bytes into buffer
 	 *
+	 * \param[out]	buffer		- pointer to buffer array
+	 * \param[in]	bufferSize	- buffer size
+	 *
 	 * \return
 	 * 		- number of read bytes if success
 	 * 		- -1 if error
@@ -90,7 +95,23 @@ public:
 	int read(uint8_t buffer[], uint32_t bufferSize);
 
 	/**
+	 * Read bufferSize bytes into buffer
+	 *
+	 * \param[out]	buffer		- pointer to buffer array
+	 * \param[in]	bufferSize	- buffer size
+	 * \param[in]	timeout		- read timeout
+	 *
+	 * \return
+	 * 		- number of read bytes if success
+	 * 		- -1 if error
+	 */
+	int read(uint8_t buffer[], uint32_t bufferSize, int64_t timeout);
+
+	/**
 	 * Write bufferSize bytes into buffer
+	 *
+	 * \param[out]	buffer		- pointer to buffer array
+	 * \param[in]	bufferSize	- buffer size
 	 *
 	 * \return
 	 * 		- number of written bytes if success

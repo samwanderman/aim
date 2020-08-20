@@ -36,6 +36,9 @@ void test01(const char* name, uint32_t baudrate) {
 	}
 	printf("\r\n");
 
+	res = serial.read(recvMessage, sizeof(recvMessage), 200);
+	printf("res is %i", res);
+
 	assert(serial.close() == 0);
 
 	printf("complete\r\n");
