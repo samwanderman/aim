@@ -133,6 +133,15 @@ public:
 private:
 	Config	config;
 	int		fd		= -1;
+
+	/**
+	 * Set different params
+	 *
+	 * \return
+	 * 		- 0 if success
+	 * 		- -1 if error
+	 */
+	int setParams();
 };
 
 } /* namespace Aim */

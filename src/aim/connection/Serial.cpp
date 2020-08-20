@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <cstdio>
+#include <algorithm>
 
 namespace Aim {
 
@@ -46,6 +47,10 @@ int Serial::open() {
 
 	fd = ::open(config.name, O_RDWR);
 	if (fd < 0) {
+		return -1;
+	}
+
+	if (setParams() == -1) {
 		return -1;
 	}
 
@@ -146,6 +151,25 @@ int Serial::setBaudrate(uint32_t baudrate) {
 
 	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
 		return -1;
+	}
+
+	return 0;
+}
+
+int Serial::setParams() {
+	if (config.nonBlock) {
+		struct termios tty{0};
+
+		if (tcgetattr(fd, &tty) != 0) {
+			return -1;
+		}
+
+		tty.c_cc[VMIN] = 0;
+		tty.c_cc[VTIME] = std::min(0, static_cast<int>(config.timeout / 100));
+
+		if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+			return -1;
+		}
 	}
 
 	return 0;
