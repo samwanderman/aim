@@ -11,6 +11,10 @@
 
 #include <cstdint>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace Aim {
 
 /**
@@ -130,9 +134,25 @@ public:
 	 */
 	int setBaudrate(uint32_t baudrate);
 
+	/**
+	 * Set timeout
+	 *
+	 * \param[in] timeout - timeout
+	 *
+	 * \return
+	 *		- 0 if success
+	 *		- -1 if error
+	 */
+	int setTimeout(int64_t timeout);
+
 private:
 	Config	config;
+
+#ifdef _WIN32
+	HANDLE	fd		= nullptr;
+#else
 	int		fd		= -1;
+#endif
 
 	/**
 	 * Set different params
