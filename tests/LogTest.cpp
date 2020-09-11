@@ -7,10 +7,12 @@
  */
 
 #include "../src/aim/logger/Log.h"
+#include "../src/aim/logger/ConsoleChannel.h"
 
 using namespace Aim;
 
 int main(int ac, char** av) {
+	Log::addChannel(new ConsoleChannel());
 	Log::info("INFO");
 	Log::debug("DEBUG");
 	Log::warn("WARN");
