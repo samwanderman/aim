@@ -9,10 +9,9 @@
 #ifndef SRC_AIM_LOGGER_LOG_H_
 #define SRC_AIM_LOGGER_LOG_H_
 
-#include <utility>
 #include <cstdio>
-#include <string>
 #include <cstdarg>
+#include <string>
 
 namespace Aim {
 
@@ -117,11 +116,25 @@ private:
 		}
 	#endif
 
-//		vfprintf(stdout, formatWithEndLine.c_str(), args...);
+		printInner(formatWithEndLine.c_str(), args...);
 
 	#ifndef _WIN32
 		fprintf(stdout, "\x1b[0m");
 	#endif
+	}
+
+	/**
+	 * Print inner
+	 *
+	 * \param[in] fd		- file descriptor
+	 * \param[in] format	- format string
+	 * \param[in] ...args	- arguments
+	 */
+	static void printInner(const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		vfprintf(stdout, format, args);
+		va_end(args);
 	}
 };
 

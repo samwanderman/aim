@@ -107,7 +107,6 @@ public:
 	std::shared_ptr<T> tryPop() {
 		Node* oldHead = head.load();
 		if (!oldHead->next) {
-			printf("666\r\n");
 			return nullptr;
 		}
 
@@ -115,8 +114,6 @@ public:
 		std::shared_ptr<T> data = oldHead->data;
 		delete oldHead;
 		--queueSize;
-
-		printf("777\r\n");
 
 		return data;
 	}
