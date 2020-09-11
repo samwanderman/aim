@@ -20,11 +20,68 @@ namespace Aim {
  */
 template<typename T>
 class ConcurrentQueue {
+private:
+	/**
+	 * Base node
+	 */
+	struct Node {
+		std::shared_ptr<T> data;
+		std::unique_ptr<Node> next;
+
+		Node() {}
+
+		Node(T const& data_) : data(data_) { }
+	};
+
+	/**
+	 * Queue head control
+	 */
+	std::unique_ptr<Node> head;
+	std::mutex headMutex;
+
+	/**
+	 * Queue tail control
+	 */
+	Node* tail;
+	std::mutex tailMutex;
+
+	/**
+	 * Queue size
+	 */
+	int queueSize = 0;
+	std::mutex queueSizeMutex;
+
+	/**
+	 * Get tail pointer
+	 *
+	 * \return tail
+	 */
+	Node* getTail() {
+		std::lock_guard lock(tailMutex);
+		return tail;
+	}
+
+	/**
+	 * Increment queue size
+	 */
+	void incQueueSize() {
+		std::lock_guard lock(queueSizeMutex);
+		++queueSize;
+	}
+
+	/**
+	 * Decrement queue size
+	 */
+	void decQueueSize() {
+		std::lock_guard lock(queueSizeMutex);
+		--queueSize;
+	}
+
 public:
 	/**
 	 * Constructor
 	 */
-	ConcurrentQueue() { }
+	ConcurrentQueue() : head(new Node), tail(head.get()), queueSize(0) { }
 
 	/**
 	 * Copy-constructor
@@ -38,10 +95,7 @@ public:
 	 *
 	 * \param[in] other - other
 	 */
-	ConcurrentQueue(ConcurrentQueue<T>&& other) {
-		std::lock_guard lock(other.mutex);
-		container = other.container;
-	}
+	ConcurrentQueue(ConcurrentQueue<T>&& other) = delete;
 
 	/**
 	 * Destructor
@@ -64,42 +118,22 @@ public:
 	 *
 	 * \return this
 	 */
-	ConcurrentQueue<T>& operator=(ConcurrentQueue<T>&& other) {
-		std::lock_guard lock(other.mutex);
-		container = other.container;
-
-		return *this;
-	}
+	ConcurrentQueue<T>& operator=(ConcurrentQueue<T>&& other) = delete;
 
 	/**
 	 * Push element into queue
 	 *
 	 * \param[in] item - item to push
 	 */
-	void push(T item) {
-		std::lock_guard lock(mutex);
-		container.push(item);
-	}
+	void push(T const& item) {
+		std::shared_ptr<T> data = std::make_shared<T>(std::move(item));
+		std::unique_ptr<Node> newNode(new Node());
 
-	/**
-	 * Pop element
-	 *
-	 * \param[out] item - ref to element
-	 *
-	 * \return
-	 * 		- true if success
-	 * 		- false if error
-	 */
-	bool pop(T& item) {
-		std::lock_guard lock(mutex);
-		if (container.size() > 0) {
-			item = container.front();
-			container.pop();
-
-			return true;
-		}
-
-		return false;
+		std::lock_guard lock(tailMutex);
+		tail->data = data;
+		tail->next = std::move(newNode);
+		tail = tail->next.get();
+		incQueueSize();
 	}
 
 	/**
@@ -109,32 +143,29 @@ public:
 	 * 		- smart pointer to value if success
 	 * 		- nullptr if error
 	 */
-	std::shared_ptr<T> pop() {
-		std::lock_guard lock(mutex);
-		if (container.size() > 0) {
-			std::shared_ptr<T> item = std::make_shared<T>(container.front());
-			container.pop();
-
-			return item;
+	std::shared_ptr<T> tryPop() {
+		std::lock_guard lock(headMutex);
+		if (head.get() == getTail()) {
+			return nullptr;
 		}
 
-		return nullptr;
+		std::shared_ptr<T> data = head->data;
+		head = std::move(head->next);
+		decQueueSize();
+
+		return data;
 	}
 
 	/**
 	 * Get queue size
 	 *
-	 * \return size
+	 * \return queue size
 	 */
 	int size() {
-		std::lock_guard lock(mutex);
+		std::lock_guard lock(queueSizeMutex);
 
-		return container.size();
+		return queueSize;
 	}
-
-private:
-	std::mutex		mutex;
-	std::queue<T>	container;
 };
 
 } /* namespace Aim */

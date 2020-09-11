@@ -28,13 +28,7 @@ void test01() {
 
 	assert(queue.size() == 2);
 
-	int res1;
-
-	queue.pop(res1);
-
-	assert(res1 == checkNumber);
-
-	std::shared_ptr<decltype(checkNumber)> res2 = queue.pop();
+	std::shared_ptr<decltype(checkNumber)> res2 = queue.tryPop();
 	assert(res2 != nullptr);
 	assert(*res2 == checkNumber);
 
@@ -71,12 +65,12 @@ void test02() {
 
 	std::thread th3([&start, &queue]() {
 		while (!start.load()) {}
-		queue.pop();
+		queue.tryPop();
 	});
 
 	std::thread th4([&start, &queue]() {
 		while (!start.load()) {}
-		queue.pop();
+		queue.tryPop();
 	});
 
 	start = true;
