@@ -143,7 +143,7 @@ public:
 	 * 		- smart pointer to value if success
 	 * 		- nullptr if error
 	 */
-	std::shared_ptr<T> tryPop() {
+	std::shared_ptr<T> pop() {
 		std::lock_guard lock(headMutex);
 		if (head.get() == getTail()) {
 			return nullptr;

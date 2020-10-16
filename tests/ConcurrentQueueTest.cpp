@@ -8,10 +8,11 @@
 
 #include "../src/aim/struct/ConcurrentQueue.h"
 
-#include <cstdio>
-#include <cassert>
-#include <thread>
 #include <atomic>
+#include <cassert>
+#include <cstdio>
+#include <memory>
+#include <thread>
 
 using namespace Aim;
 
@@ -28,9 +29,13 @@ void test01() {
 
 	assert(queue.size() == 2);
 
-	std::shared_ptr<decltype(checkNumber)> res2 = queue.tryPop();
+	std::shared_ptr<decltype(checkNumber)> res2 = queue.pop();
 	assert(res2 != nullptr);
 	assert(*res2 == checkNumber);
+	assert(queue.size() == 1);
+
+	queue.pop();
+	assert(queue.size() == 0);
 
 	printf("complete\r\n");
 }
@@ -40,9 +45,7 @@ void test02() {
 
 	ConcurrentQueue<int> queue;
 
-	std::atomic<bool> start;
-
-	start = false;
+	std::atomic<bool> start = false;
 
 	std::thread th1([&start, &queue]() {
 		while (!start.load()) {}
@@ -61,16 +64,24 @@ void test02() {
 
 	assert(queue.size() == 2);
 
-	start = false;
+	printf("complete\r\n");
+}
+
+void test03() {
+	printf("Test02 ");
+
+	ConcurrentQueue<int> queue;
+
+	std::atomic<bool> start = false;
 
 	std::thread th3([&start, &queue]() {
 		while (!start.load()) {}
-		queue.tryPop();
+		queue.pop();
 	});
 
 	std::thread th4([&start, &queue]() {
 		while (!start.load()) {}
-		queue.tryPop();
+		queue.pop();
 	});
 
 	start = true;
@@ -86,6 +97,7 @@ void test02() {
 int main(int ac, char** av) {
 	test01();
 	test02();
+	test03();
 
 	return 0;
 }

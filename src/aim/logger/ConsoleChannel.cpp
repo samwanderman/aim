@@ -11,6 +11,10 @@
 #include <cstdio>
 #include <string>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace Aim {
 
 /**
@@ -34,19 +38,19 @@ void ConsoleChannel::log(LogLevel level, const char* format, va_list args) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	switch (level) {
-	case Level::Info: {
+	case LogLevel::Info: {
 		SetConsoleTextAttribute(hConsole, 2);
 	} break;
 
-	case Level::Debug: {
+	case LogLevel::Debug: {
 		SetConsoleTextAttribute(hConsole, 8);
 	} break;
 
-	case Level::Warn: {
+	case LogLevel::Warn: {
 		SetConsoleTextAttribute(hConsole, 6);
 	} break;
 
-	case Level::Error: {
+	case LogLevel::Error: {
 		SetConsoleTextAttribute(hConsole, 4);
 	} break;
 
