@@ -10,6 +10,7 @@
 #define SRC_AIM_STRUCT_LOCKFREESTACK_H_
 
 #include <memory>
+#include <atomic>
 
 namespace Aim {
 
@@ -19,15 +20,25 @@ namespace Aim {
 template <typename T>
 class LockFreeStack {
 private:
+//	struct Node;
+//
+//	/**
+//	 * Counted Node
+//	 */
+//	struct CountedNode {
+//		Node		node;
+//		int16_t		externCounter = 0;
+//	};
+
 	/**
 	 * Node struct
 	 */
 	struct Node {
 		std::shared_ptr<T>	data;
-		Node* 				next;
+		std::atomic<Node*>	next;
 	};
 
-	Node* head = nullptr;
+	std::atomic<Node*> head;
 
 public:
 	/**
@@ -36,10 +47,13 @@ public:
 	 * \param[in] data - data to add
 	 */
 	void push(T const& data) {
+		Node* oldHead = head.load();
+
 		Node* node = new Node();
-		node->data = std::make_shared<T>(data);
-		node->next = head;
-		head = node;
+		node->data		= std::make_shared<T>(data);
+		node->next		= oldHead;
+
+		while (!head.compare_exchange_weak(oldHead, node));
 	}
 
 	/**
@@ -50,12 +64,12 @@ public:
 	 * 		- ptr to data if success
 	 */
 	std::shared_ptr<T> pop() {
-		Node* oldHead = head;
+		Node* oldHead = head.load();
 		if (oldHead == nullptr) {
 			return nullptr;
 		}
 
-		head = head->next;
+		while (!head.compare_exchange_weak(oldHead, oldHead->next));
 
 		std::shared_ptr<T> res;
 		res.swap(oldHead->data);
