@@ -9,8 +9,9 @@
 #ifndef SRC_AIM_STRUCT_LOCKFREESTACK_H_
 #define SRC_AIM_STRUCT_LOCKFREESTACK_H_
 
-#include <memory>
+#include <cstdint>
 #include <atomic>
+#include <memory>
 
 namespace Aim {
 
@@ -20,25 +21,18 @@ namespace Aim {
 template <typename T>
 class LockFreeStack {
 private:
-//	struct Node;
-//
-//	/**
-//	 * Counted Node
-//	 */
-//	struct CountedNode {
-//		Node		node;
-//		int16_t		externCounter = 0;
-//	};
-
 	/**
 	 * Node struct
 	 */
 	struct Node {
-		std::shared_ptr<T>	data;
-		std::atomic<Node*>	next;
+		T		data;
+		Node*	next = nullptr;
+
+		Node(T const& data_) : data(data_), next(nullptr) { }
 	};
 
-	std::atomic<Node*> head;
+	std::atomic<Node*>		head = nullptr;
+	std::atomic<uint32_t>	size = 0;
 
 public:
 	/**
@@ -47,13 +41,12 @@ public:
 	 * \param[in] data - data to add
 	 */
 	void push(T const& data) {
-		Node* oldHead = head.load();
+		Node* node = new Node(data);
 
-		Node* node = new Node();
-		node->data		= std::make_shared<T>(data);
-		node->next		= oldHead;
+		node->next = head.load();
 
-		while (!head.compare_exchange_weak(oldHead, node));
+		while (!head.compare_exchange_weak(node->next, node));
+		++size;
 	}
 
 	/**
@@ -70,13 +63,22 @@ public:
 		}
 
 		while (!head.compare_exchange_weak(oldHead, oldHead->next));
+		--size;
 
-		std::shared_ptr<T> res;
-		res.swap(oldHead->data);
+		std::shared_ptr<T> data = std::make_shared<T>(std::move(oldHead->data));
 
 		delete oldHead;
 
-		return res;
+		return data;
+	}
+
+	/**
+	 * Get stack size
+	 *
+	 * \return size
+	 */
+	uint32_t getSize() {
+		return size;
 	}
 };
 
